@@ -90,12 +90,13 @@ export class ScreenshotService {
    * The URL is valid once the CI workflow's git-commit step runs.
    */
   private githubRawUrl(filename: string): string {
+    const v = Date.now();
     return (
       `https://raw.githubusercontent.com` +
       `/${config.githubOwner}` +
       `/${config.githubRepo}` +
       `/${config.githubBranch}` +
-      `/screenshots/${filename}`
+      `/screenshots/${filename}?v=${v}`
     );
   }
 
