@@ -67,7 +67,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # ── 2. Node.js setup ─────────────────────────────────
@@ -106,6 +106,7 @@ jobs:
           # Only commit if there are staged changes
           if ! git diff --cached --quiet; then
             git commit -m "chore: update screenshots and logs [$(date -u '+%Y-%m-%d %H:%M UTC')] [skip ci]"
+            git pull origin ${{ github.ref_name }} --rebase
             git push
           else
             echo "No changes to commit."
