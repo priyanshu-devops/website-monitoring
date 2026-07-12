@@ -1,0 +1,41 @@
+name: Dashboard CI
+
+on:
+  push:
+    paths:
+      - 'dashboard/**'
+      - 'dashboard-api/**'
+  workflow_dispatch:
+
+jobs:
+  build-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dashboard dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Build dashboard frontend
+        run: |
+          cd dashboard
+          npm run build
+
+      - name: Install dashboard API dependencies
+        run: |
+          cd dashboard-api
+          npm ci
+
+      - name: Build dashboard API
+        run: |
+          cd dashboard-api
+          npm run build

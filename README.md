@@ -314,6 +314,101 @@ CONCURRENCY_LIMIT=5    # lower for local machine
 
 ---
 
+## Dashboard UI + API
+
+This repository now includes a dedicated dashboard frontend and a secure backend API that reads monitoring data directly from Google Sheets.
+
+### Dashboard frontend
+
+- Folder: `dashboard/`
+- Built with React + Vite + TypeScript
+- Uses `src/App.tsx` to display summary metrics, a domain status table, screenshot previews, and DevOps-style status indicators
+- Local dev command:
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
+- Build command:
+
+```bash
+cd dashboard
+npm run build
+```
+
+### Dashboard API
+
+- Folder: `dashboard-api/`
+- Express server reads the same Google Sheet data via the Sheets API
+- Keeps `GOOGLE_CREDENTIALS` server-side so secrets are not exposed to the browser
+- Local dev command:
+
+```bash
+cd dashboard-api
+npm install
+npm run dev
+```
+
+- Build command:
+
+```bash
+cd dashboard-api
+npm run build
+```
+
+### API configuration
+
+Copy `dashboard-api/.env.example` to `dashboard-api/.env` and configure:
+
+- `SPREADSHEET_ID`
+- `SHEET_NAME`
+- `GOOGLE_CREDENTIALS`
+- `PORT`
+
+The frontend expects the API at `http://localhost:4000/api/monitoring-data` by default. You can override this with `VITE_API_URL` in `dashboard/.env` if needed.
+
+---
+
+## Branch-ready commit plan
+
+Use this plan when you want to create a separate dashboard branch and keep your main monitoring code stable.
+
+1. Create the branch:
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b dashboard-ui
+```
+
+2. Add the new dashboard folders and commit them:
+
+```bash
+git add dashboard dashboard-api .github/workflows/dashboard.yml README.md
+git commit -m "feat: add dashboard UI and dashboard API support"
+```
+
+3. Push the branch to GitHub:
+
+```bash
+git push --set-upstream origin dashboard-ui
+```
+
+4. Open a pull request from `dashboard-ui` into `main`.
+
+5. Verify the dashboard CI workflow in GitHub Actions:
+   - `Dashboard CI` should run successfully
+   - `dashboard/` should build without errors
+   - `dashboard-api/` should build without errors
+
+6. Merge the branch once verified.
+
+> If you want to keep the UI isolated, continue development on `dashboard-ui` and preserve `main` for monitoring-only changes.
+
+---
+
 ## Performance Notes
 
 | Domains | Concurrency | Est. Time (no screenshots) | Est. Time (with screenshots) |
