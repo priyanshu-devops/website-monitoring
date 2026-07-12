@@ -219,14 +219,14 @@ export function determineWebsiteStatus(
   if (statusCode >= 200 && statusCode < 300)                return 'Online';
   if (statusCode >= 300 && statusCode < 400)                return 'Redirect';
   if (statusCode === 401)                                    return 'Online (Auth Required)';
-  if (statusCode === 403)                                    return `Error 403 (Forbidden)`;
-  if (statusCode === 404)                                    return `Error 404 (Not Found)`;
-  if (statusCode === 429)                                    return `Error 429 (Rate Limited)`;
-  if (statusCode === 500)                                    return `Error 500 (Server Error)`;
-  if (statusCode === 503)                                    return `Error 503 (Unavailable)`;
-  if (statusCode === 521)                                    return `Error 521 (Cloudflare: Origin Down)`;
-  if (statusCode === 522)                                    return `Error 522 (Cloudflare: Connection Timed Out)`;
-  if (statusCode === 523)                                    return `Error 523 (Cloudflare: Origin Unreachable)`;
+  if (statusCode === 403)                                    return 'Online (Protected)';
+  if (statusCode === 404)                                    return 'Error 404 (Not Found)';
+  if (statusCode === 429)                                    return 'Error 429 (Rate Limited)';
+  if (statusCode === 500)                                    return 'Error 500 (Server Error)';
+  if (statusCode === 503)                                    return 'Error 503 (Unavailable)';
+  if (statusCode === 521)                                    return 'Error 521 (Cloudflare: Origin Down)';
+  if (statusCode === 522)                                    return 'Error 522 (Cloudflare: Connection Timed Out)';
+  if (statusCode === 523)                                    return 'Error 523 (Cloudflare: Origin Unreachable)';
   if (statusCode >= 400)                                     return `Error ${statusCode}`;
   return 'Unknown';
 }

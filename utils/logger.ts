@@ -59,7 +59,10 @@ function write(level: LogLevel, message: string, meta?: object): void {
   const line = formatLine(level, message, meta);
 
   // ── Console ──────────────────────────────────────────────
-  process.stdout.write(`${COLOUR[level]}${line}${COLOUR.RESET}\n`);
+  const ts = new Date().toISOString();
+  const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+  const dim = '\x1b[90m';
+  process.stdout.write(`${dim}[${ts}]${COLOUR.RESET} ${COLOUR[level]}[${level.padEnd(7)}]${COLOUR.RESET} ${message}${metaStr}\n`);
 
   // ── File ─────────────────────────────────────────────────
   try {
