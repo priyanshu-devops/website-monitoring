@@ -1,0 +1,132 @@
+name: Domain Monitor
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggers
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # 09:00 AM IST  =  03:30 UTC
+    - cron: '30 3 * * *'
+    # 09:00 PM IST  =  15:30 UTC
+    - cron: '30 15 * * *'
+
+  # Allow manual runs from the GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      enable_screenshots:
+        description: 'Capture screenshots? (true / false)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      concurrency_limit:
+        description: 'Max concurrent checks (1–20)'
+        required: false
+        default: '10'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Permissions
+# ─────────────────────────────────────────────────────────────────────────────
+permissions:
+  contents: write   # needed to push screenshots + logs back to repo
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Jobs
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  monitor:
+    name: Run Domain Monitor
+    runs-on: ubuntu-latest
+    timeout-minutes: 30          # hard cap — prevents runaway jobs
+
+    env:
+      # ── Google Sheets ─────────────────────────────────────
+      SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      SHEET_NAME: 'Sheet1'
+
+      # ── GitHub (screenshot storage) ───────────────────────
+      # GITHUB_TOKEN is the built-in Actions token — no secret needed
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPO:  ${{ github.event.repository.name }}
+      GITHUB_BRANCH: main
+
+      # ── Performance ───────────────────────────────────────
+      CONCURRENCY_LIMIT: ${{ github.event.inputs.concurrency_limit || '10' }}
+      REQUEST_TIMEOUT:   '10000'
+      RETRY_ATTEMPTS:    '2'
+
+      # ── Features ─────────────────────────────────────────
+      ENABLE_SCREENSHOTS: ${{ github.event.inputs.enable_screenshots || 'true' }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Node.js setup ─────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. Install Node dependencies ──────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Install Playwright browsers ───────────────────
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      # ── 5. Create required directories ───────────────────
+      - name: Create runtime directories
+        run: |
+          mkdir -p logs screenshots
+
+      # ── 6. Run the monitor ────────────────────────────────
+      - name: Run domain monitor
+        run: npm run monitor
+
+      # ── 7. Commit screenshots + logs ──────────────────────
+      # Uses the built-in GITHUB_TOKEN — no PAT required.
+      # [skip ci] prevents this commit from re-triggering the workflow.
+      - name: Commit screenshots and logs
+        if: always()
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git add screenshots/ logs/ || true
+          # Only commit if there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update screenshots and logs [$(date -u '+%Y-%m-%d %H:%M UTC')] [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+
+      # ── 8. Upload logs as workflow artifact ───────────────
+      - name: Upload monitoring logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-logs-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 9. Upload screenshots as workflow artifact ────────
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: screenshots/
+          retention-days: 7
+          if-no-files-found: warn
